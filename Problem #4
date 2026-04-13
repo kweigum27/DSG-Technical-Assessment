@@ -1,0 +1,49 @@
+/* Problem #4 */
+/* Which product subcategories tend to sell better when they’re discounted? */
+
+--Sales table
+WITH sales AS (
+SELECT ProductID
+	, Quantity
+	, UnitPrice
+	, CASE WHEN Discount <> 0 THEN "Y" ELSE "N" END AS discount_applied
+	, Quantity * UnitPrice as total_revenue
+	, (Quantity * UnitPrice) - ((Quantity * UnitPrice)*Discount) as revenue_after_discount
+FROM sales
+),
+
+--Products table
+products AS (
+SELECT ProductID
+	, Category
+	, Subcategory
+FROM products
+),
+
+aggregated AS (
+SELECT p.Subcategory AS subcategory
+	, s.discount_applied AS discount_applied
+	, SUM(s.quantity) AS quantity
+	, SUM(s.total_revenue) AS total_revenue
+	, SUM(s.revenue_after_discount) AS revenue_after_discount
+FROM sales s
+LEFT JOIN products p ON p.ProductID = s.ProductID
+GROUP BY p.Subcategory, discount_applied
+),
+
+discount AS (
+SELECT subcategory
+	, SUM(CASE WHEN discount_applied = 'Y' THEN quantity ELSE 0 END) AS discounted_quantity
+        , SUM(CASE WHEN discount_applied = 'N' THEN quantity ELSE 0 END) AS non_discounted_quantity
+FROM aggregated
+GROUP BY subcategory
+)
+
+SELECT subcategory
+	, discounted_quantity
+	, non_discounted_quantity
+	, discounted_quantity - non_discounted_quantity AS quantity_diff
+FROM discount
+WHERE discounted_quantity > non_discounted_quantity
+ORDER BY quantity_diff DESC
+;
