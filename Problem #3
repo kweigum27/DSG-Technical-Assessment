@@ -1,0 +1,41 @@
+/* Problem #3 */
+/* What is the month-over-month change in sales volume, as measured by total unit price, broken down by region for 2024? */
+
+--Sales table
+WITH sales AS (
+SELECT OrderDate
+	, Region
+	, Quantity
+	, UnitPrice
+	, Quantity * UnitPrice as total_revenue
+FROM sales
+),
+
+--Calendar table
+calendar AS (
+SELECT date
+	, year
+	, month
+FROM calendar
+),
+
+aggregated AS (
+SELECT cal.month AS month
+	, s.Region AS region
+	, SUM(s.total_revenue) AS total_revenue
+	, LAG(SUM(s.total_revenue)) OVER (PARTITION BY s.Region ORDER BY cal.month ASC) AS previous_month_revenue
+FROM sales s
+LEFT JOIN calendar cal ON cal.date = s.OrderDate
+WHERE cal.year = 2024
+GROUP BY cal.month, s.Region
+)
+
+SELECT month
+	, region
+	, total_revenue
+	, previous_month_revenue
+	, (total_revenue - previous_month_revenue)
+		/ NULLIF(previous_month_revenue, 0) AS percent_diff_monthly_revenue
+FROM aggregated
+ORDER BY region, month;
+;
