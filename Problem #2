@@ -1,0 +1,60 @@
+/* Problem #2 */
+/* What product sub-category has seen the most growth in sales, as measured by total units sold, between 2024 and 2025? */
+
+--2025 data does not exist, per the question.
+--Sales table
+WITH sales AS (
+SELECT OrderDate
+	, ProductID
+	, Quantity
+	, UnitPrice
+	, Quantity * UnitPrice as total_revenue
+FROM sales
+),
+
+--Calendar table
+calendar AS (
+SELECT date
+	, year
+FROM calendar
+),
+
+--Products table
+products AS (
+SELECT ProductID
+	, Category
+	, Subcategory
+FROM products
+),
+
+--Aggregated table with LAG Window function
+aggregated AS (
+SELECT p.Subcategory AS subcategory
+	, cal.year AS year
+	, SUM(s.quantity) AS quantity
+	, LAG(SUM(s.quantity)) OVER (PARTITION BY p.Subcategory ORDER BY cal.year ASC) AS previous_year_quantity
+FROM sales s
+LEFT JOIN calendar cal ON cal.date = s.OrderDate
+LEFT JOIN products p ON p.ProductID = s.ProductID
+GROUP BY p.Subcategory, cal.year ASC
+),
+
+change AS (
+SELECT subcategory
+	, year
+	, quantity
+	, previous_year_quantity
+	, (quantity - previous_year_quantity)
+		/ NULLIF(previous_year_quantity, 0) AS percent_diff_quantity
+),
+
+ranked AS (
+SELECT *
+	, RANK() OVER (ORDER BY percent_diff_quantity DESC) AS rnk
+FROM change
+)
+
+SELECT subcategory, quantity, percent_diff_quantity
+FROM ranked
+WHERE rnk = 1
+;
