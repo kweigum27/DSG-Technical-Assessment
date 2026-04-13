@@ -1,0 +1,47 @@
+/* Problem #1 */
+/* Which customer segments resulted in the most sales, as measured by total unit price, in each of the reported years?*/
+
+--Sales table
+WITH sales AS (
+SELECT OrderDate
+	, CustomerID
+	, Quantity
+	, UnitPrice
+	, Quantity * UnitPrice as total_revenue
+FROM sales
+),
+
+--Calendar table
+calendar AS (
+SELECT date
+	, year
+FROM calendar
+),
+
+--Customer table
+customers AS (
+SELECT CustomerID
+	, Segment
+FROM customers
+),
+
+aggregated AS (
+SELECT cal.year
+	, c.Segment
+	, SUM(s.total_revenue) AS total_revenue
+FROM sales s
+LEFT JOIN calendar cal ON cal.date = s.OrderDate
+LEFT JOIN customers c ON c.CustomerID = s.CustomerID
+GROUP BY cal.year, c.Segment
+),
+
+ranked AS (
+SELECT *
+	, RANK() OVER (PARTITION BY year ORDER BY total_revenue DESC) AS rnk
+FROM aggregated
+)
+
+SELECT year, Segment, total_revenue
+FROM ranked
+WHERE rnk = 1
+;
