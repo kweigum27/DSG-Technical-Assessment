@@ -1,0 +1,14 @@
+/* Problem #5 */
+/* Customer Customer_1096 was accidentally added to the SMB segment. They should be in Enterprise. Write the Update statement to change this information. */
+
+--Run initially to verify the Segment value of Customer_1096 is SMB. I would run again after update statement to verify changes to Segment field.
+SELECT CustomerID, CustomerName, Segment
+FROM customers
+WHERE CustomerID = 'Customer_1096'
+;
+
+--Update Segment for Customer_1096 to Enterprise
+UPDATE customers
+SET Segment = 'Enterprise'
+WHERE CustomerID = 'Customer_1096'
+;
